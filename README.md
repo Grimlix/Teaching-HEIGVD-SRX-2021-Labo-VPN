@@ -30,8 +30,8 @@ Dans ce travail de laboratoire, vous allez configurer des routeurs Cisco émulé
 -	Capture Sniffer avec filtres précis sur la communication à épier
 -	Activation du mode « debug » pour certaines fonctions du routeur
 -	Observation des protocoles IPSec
- 
- 
+
+
 ## Matériel
 
 Le logiciel d'émulation à utiliser c'est eve-ng (vous l'avez déjà employé). Vous trouverez ici un [guide très condensé](files/Manuel_EVE-NG.pdf) pour l'utilisation et l'installation de eve-ng.
@@ -106,7 +106,7 @@ Un « protocol » différent de `up` indique la plupart du temps que l’interfa
 
 ---
 
-**Réponse :**  
+**Réponse :**  Nous n'avons pas eu de problèmes.
 
 ---
 
@@ -143,7 +143,7 @@ Pour votre topologie il est utile de contrôler la connectivité entre :
 
 ---
 
-**Réponse :**  
+**Réponse :**  Tous les pings sont passés.
 
 ---
 
@@ -161,12 +161,15 @@ Pour déclencher et pratiquer les captures vous allez « pinger » votre routeur
 -	Une trace sniffer (Wireshark) à la sortie du routeur R2 vers Internet. Si vous ne savez pas utiliser Wireshark avec eve-ng, référez-vous au document explicatif eve-ng. Le filtre de **capture** (attention, c'est un filtre de **capture** et pas un filtre d'affichage) suivant peut vous aider avec votre capture : `ip host 193.100.100.1`. 
 -	Les messages de R1 avec `debug ip icmp`.
 
-
 **Question 3: Montrez vous captures**
 
 ---
 
 **Screenshots :**  
+
+![](./images/icmpreply.png)
+
+J'arrive pas a faire fonctionner WIRESHARK
 
 ---
 
@@ -239,6 +242,12 @@ Vous pouvez consulter l’état de votre configuration IKE avec les commandes su
 
 **Réponse :**  
 
+![](./images/crypto.png)
+
+![](./images/crypto2.png)
+
+Cette commande permet d'afficher la/les crypto policy(ies) actuelle(s). Avant de configurer les routeurs il affichait une liste de policy utilisables.
+
 ---
 
 
@@ -247,6 +256,12 @@ Vous pouvez consulter l’état de votre configuration IKE avec les commandes su
 ---
 
 **Réponse :**  
+
+![](./images/key.png)
+
+![](./images/key2.png)
+
+Pour les deux routeurs l'authentication a été configuré en pre-share. L'"Encrypted Preshared Key" permet de stocker des textes brutes de manière securisée avec le format NVRAM. On constate que c'est la clé *cisco-1* qui sont assez compliquées pour de grand réseau mais plus pratique pour des petits reseaux.
 
 ---
 
@@ -339,7 +354,7 @@ Pensez à démarrer votre sniffer sur la sortie du routeur R2 vers internet avan
 
 ---
 
-**Réponse :**  
+**Réponse :**  J'arrive pas a faire fonctionner WIRESHARK
 
 ---
 
@@ -347,7 +362,27 @@ Pensez à démarrer votre sniffer sur la sortie du routeur R2 vers internet avan
 
 ---
 
-**Réponse :**  
+**Réponse :**  Les VPNs IPsec utilise les lifetime pour contrôler quand un tunnel doit être rerétablit :
+
+* lifetime kilobytes : le tunnel va expirer quand un montant de donnés ont été transféré, dans notre cas 2560.
+
+* lifetime seconds : le tunnel va expirer après un certains temps en secondes, dans notre cas 300.
+
+  Ces deux lifetimes sont globaux. Un des deux peut déclencher le re rétablissement d'un tunnel.
+
+  
+
+* idle-time : permet aux SAs associées à des paires inacifs d'être supprimées avant que les lifetimes globaux soient expirés. S'il n'y a pas d'idle time configuré, ce sont les lifetimes globaux qui sont appliqués.
+
+The IPsec SA idle timers are different from the global lifetimes for IPsec SAs. The expiration of the global lifetime is independent of peer activity. The IPsec SA idle timer allows SAs associated with inactive peers to be deleted before the global lifetime has expired.
+
+If the IPsec SA idle timers are not configured, only the global lifetimes for IPsec SAs are applied. SAs are maintained until the global timers expire, regardless of peer activity.
+
+https://www.cisco.com/en/US/docs/ios-xml/ios/sec_conn_dplane/configuration/15-1s/sec-ipsec-idle-tmrs.html#:~:text=The%20IPsec%20SA%20idle%20timers,the%20global%20lifetime%20has%20expired.
+
+https://documentation.meraki.com/General_Administration/Tools_and_Troubleshooting/Networking_Fundamentals%3A_IPSec_and_IKE
+
+https://documentation.meraki.com/MX/Site-to-site_VPN/IPsec_VPN_Lifetimes
 
 ---
 
@@ -356,21 +391,27 @@ Pensez à démarrer votre sniffer sur la sortie du routeur R2 vers internet avan
 
 En vous appuyant sur les notions vues en cours et vos observations en laboratoire, essayez de répondre aux questions. À chaque fois, expliquez comment vous avez fait pour déterminer la réponse exacte (capture, config, théorie, ou autre).
 
-
 **Question 8: Déterminez quel(s) type(s) de protocole VPN a (ont) été mis en œuvre (IKE, ESP, AH, ou autre).**
 
 ---
 
 **Réponse :**  
 
----
+![](./images/r1.png)
 
+![](./images/r1.2.png)
+
+
+
+---
 
 **Question 9: Expliquez si c’est un mode tunnel ou transport.**
 
 ---
 
-**Réponse :**  
+**Réponse :**  Nous configuré le VPN en mode STRONG donc en tunnel.
+
+![](./images/map.png)
 
 ---
 
@@ -379,24 +420,34 @@ En vous appuyant sur les notions vues en cours et vos observations en laboratoir
 
 ---
 
-**Réponse :**  
+**Réponse :**  Nous sommes donc en mode tunnel, c'est à dire que le paquet entier est chiffré. Et il ajoute une nouvelle entête IP, une entête ESP et une authentification ESP.
+
+![](./images/tunnel.png)
+
+L'algorithme utilisé pour le chiffrement est l'AES-256. Dans R2 nous avons donné la possibilité de chiffrer en 3DES (en première priorité en plus) mais pas dans le routeur R1. Lors du "proposal" ils se sont alors mis d'accord sur l'AES-256.
+
+![](./images/encrypt.png)
 
 ---
-
 
 **Question 11: Expliquez quelles sont les parties du paquet qui sont authentifiées. Donnez l’algorithme cryptographique correspondant.**
 
 ---
 
-**Réponse :**  
+**Réponse :**  Nous sommes en tunnel. On chiffre alors tout le paquet.
+
+![](./images/auth2.png)
+
+L'algorithme utilisé est le sha pour les mêmes raisons que la question d'avant :
+
+![](./images/auth.png)
 
 ---
-
 
 **Question 12: Expliquez quelles sont les parties du paquet qui sont protégées en intégrité. Donnez l’algorithme cryptographique correspondant.**
 
 ---
 
-**Réponse :**  
+**Réponse :**  Comme l'étape d'authentification.
 
 ---
