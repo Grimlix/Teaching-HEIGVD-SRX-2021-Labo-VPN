@@ -246,7 +246,9 @@ Vous pouvez consulter l’état de votre configuration IKE avec les commandes su
 
 ![](./images/crypto2.png)
 
-Cette commande permet d'afficher la/les crypto policy(ies) actuelle(s). Avant de configurer les routeurs il affichait une liste de policy utilisables.
+Cette commande permet d'afficher la/les crypto policy(ies) actuelle(s). Avant de configurer les routeurs il affichait une liste de policy utilisables. On constate que ça sera la policy avec priorité 20 qui sera choisi car les deux routeurs seront d'accord sur les algorithmes à utiliser. Ils utiliseront alors AES-256, sha-1 (HMAC variant), DH (groupe 5) et la pre-shared key pour établir le canal securisé.
+
+https://www.cisco.com/c/en/us/td/docs/security/asa/asa72/configuration/guide/conf_gd/ike.html
 
 ---
 
@@ -261,7 +263,11 @@ Cette commande permet d'afficher la/les crypto policy(ies) actuelle(s). Avant de
 
 ![](./images/key2.png)
 
-Pour les deux routeurs l'authentication a été configuré en pre-share. L'"Encrypted Preshared Key" permet de stocker des textes brutes de manière securisée avec le format NVRAM. On constate que c'est la clé *cisco-1* qui sont assez compliquées pour de grand réseau mais plus pratique pour des petits reseaux.
+Pour les deux routeurs l'authentification a été configuré avec une pre-shared key. De chaque côté ils vont vérifier si le routeur en face à la même clé pour pouvoir l'authentifier. C'est une méthode qui est assez compliquée pour de grand réseau mais plus pratique pour des petits réseaux.
+
+C'est par contre toujours très dangereux de garder cette clé en clair dans les routeurs. De plus "cisco-1" est beaucoup trop simple à trouver et/ou à cracker.
+
+https://community.juniper.net/communities/community-home/digestviewer/viewthread?MID=63939
 
 ---
 
@@ -362,27 +368,25 @@ Pensez à démarrer votre sniffer sur la sortie du routeur R2 vers internet avan
 
 ---
 
-**Réponse :**  Les VPNs IPsec utilise les lifetime pour contrôler quand un tunnel doit être rerétablit :
+**Réponse :**  Les VPNs IPSec utilise les lifetimes pour contrôler quand un tunnel doit être rerétablit, dans un cas pour le tunnel isakmp (IKE) et pour l'autre le tunnel IPSec. De base la durée de vie de la phase 1 doit être plus grand que celui de la phase 2 ce qui n'est pas le cas ici (nous avons 1800s pour la phase 1 et 2560s pour la phase 2). Cela pourrait donner quelques problèmes car la phase 2 à besoin de la phase 1.
 
-* lifetime kilobytes : le tunnel va expirer quand un montant de donnés ont été transféré, dans notre cas 2560.
+Ces deux lifetimes sont globaux. Un des deux peut déclencher le re rétablissement d'un tunnel.
 
-* lifetime seconds : le tunnel va expirer après un certains temps en secondes, dans notre cas 300.
+* lifetime kilobytes : le tunnel va expirer quand un montant de donnés ont été transféré.
 
-  Ces deux lifetimes sont globaux. Un des deux peut déclencher le re rétablissement d'un tunnel.
+* lifetime seconds : le tunnel va expirer après un certains temps en secondes.
 
   
 
-* idle-time : permet aux SAs associées à des paires inacifs d'être supprimées avant que les lifetimes globaux soient expirés. S'il n'y a pas d'idle time configuré, ce sont les lifetimes globaux qui sont appliqués.
-
-The IPsec SA idle timers are different from the global lifetimes for IPsec SAs. The expiration of the global lifetime is independent of peer activity. The IPsec SA idle timer allows SAs associated with inactive peers to be deleted before the global lifetime has expired.
-
-If the IPsec SA idle timers are not configured, only the global lifetimes for IPsec SAs are applied. SAs are maintained until the global timers expire, regardless of peer activity.
+* idle-time : permet aux SAs associées à des paires inactifs d'être supprimées avant que les lifetimes globaux soient expirés. S'il n'y a pas d'idle time configuré, ce sont les lifetimes globaux qui sont appliqués.
 
 https://www.cisco.com/en/US/docs/ios-xml/ios/sec_conn_dplane/configuration/15-1s/sec-ipsec-idle-tmrs.html#:~:text=The%20IPsec%20SA%20idle%20timers,the%20global%20lifetime%20has%20expired.
 
 https://documentation.meraki.com/General_Administration/Tools_and_Troubleshooting/Networking_Fundamentals%3A_IPSec_and_IKE
 
 https://documentation.meraki.com/MX/Site-to-site_VPN/IPsec_VPN_Lifetimes
+
+https://learningnetwork.cisco.com/s/question/0D53i00000KsP6q/relations-of-ike-phase-1-and-2
 
 ---
 
@@ -395,7 +399,7 @@ En vous appuyant sur les notions vues en cours et vos observations en laboratoir
 
 ---
 
-**Réponse :**  
+**Réponse :**  Nous avons IKE v2 (car nous utilisons isakmp) pour l'échange de clé, ESP avec aes-192 pour le chiffrement et pour l'authentification nous n'utilisons pas AH mais une authentification avec ESP (esp-sha-hmac).
 
 ![](./images/r1.png)
 
@@ -420,13 +424,13 @@ En vous appuyant sur les notions vues en cours et vos observations en laboratoir
 
 ---
 
-**Réponse :**  Nous sommes donc en mode tunnel, c'est à dire que le paquet entier est chiffré. Et il ajoute une nouvelle entête IP, une entête ESP et une authentification ESP.
+**Réponse :**  Nous sommes en mode tunnel, c'est à dire que le paquet original entier est chiffré. 
 
 ![](./images/tunnel.png)
 
-L'algorithme utilisé pour le chiffrement est l'AES-256. Dans R2 nous avons donné la possibilité de chiffrer en 3DES (en première priorité en plus) mais pas dans le routeur R1. Lors du "proposal" ils se sont alors mis d'accord sur l'AES-256.
+L'algorithme utilisé est le AES 192 bits.
 
-![](./images/encrypt.png)
+![](./images/aaa.png)
 
 ---
 
@@ -434,13 +438,15 @@ L'algorithme utilisé pour le chiffrement est l'AES-256. Dans R2 nous avons donn
 
 ---
 
-**Réponse :**  Nous sommes en tunnel. On chiffre alors tout le paquet.
+**Réponse :**  Nous sommes en mode tunnel et nous utilisons une authentification avec ESP. Le paquet est authentifié de cette manière :
 
-![](./images/auth2.png)
+![](./images/tunnel.png)
 
-L'algorithme utilisé est le sha pour les mêmes raisons que la question d'avant :
+L'algorithme utilisé est un HMAC avec l'algorithme sha-1 :
 
-![](./images/auth.png)
+![](./images/ccc.png)
+
+![](./images/bbbb.png)
 
 ---
 
