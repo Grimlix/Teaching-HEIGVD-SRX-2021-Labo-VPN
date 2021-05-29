@@ -1,4 +1,4 @@
-# Teaching-HEIGVD-SRX-2021-Labo-VPN
+Teaching-HEIGVD-SRX-2021-Labo-VPN
 
 **Ce travail de laboratoire est à faire en équipes de 2 personnes**
 
@@ -106,7 +106,9 @@ Un « protocol » différent de `up` indique la plupart du temps que l’interfa
 
 ---
 
-**Réponse :**  Nous n'avons pas eu de problèmes.
+**Réponse :**  Nous n'avons pas eu de problèmes sur le réseau lui même. Nous avons cependant eu quelques soucis pour utiliser les capture avec wireshark. Nous avons utilisé ce lien pour corrigé le problème :
+
+https://mytechmemo.net/eve-ng-installation-and-setup/#:~:text=Wireshark%20will%20start%20and%20packet,NG%5Cputty.exe'.
 
 ---
 
@@ -169,7 +171,7 @@ Pour déclencher et pratiquer les captures vous allez « pinger » votre routeur
 
 ![](./images/icmpreply.png)
 
-J'arrive pas a faire fonctionner WIRESHARK
+TODO : J'arrivais pas a faire fonctionner wireshark (j'ai mis le lien cf question 1), j'ai deja fait la config donc j'te laisse mettre l'image toi. 
 
 ---
 
@@ -360,7 +362,33 @@ Pensez à démarrer votre sniffer sur la sortie du routeur R2 vers internet avan
 
 ---
 
-**Réponse :**  J'arrive pas a faire fonctionner WIRESHARK
+**Réponse :**  
+
+Wireshark :
+
+![](./images/wireshark1.png)
+
+On constate en premier lieu l'échange en 3 messages (c'est le mode agressif) de IKE avec ISAKMP pour créer un canal sécurisé entre les deux machines. Puis les pings sont envoyé et reçu avec le protocole ESP donc ils ont bien été chiffrés. On peut le constater en regardant le détails des paquets :
+
+![](./images/dddd.png)
+
+TODO : Tout ce qui se passe dans ces screen (logs R1) je suis pas trop sûr. Surtout avec l'ordre dont se fait les choses et l'expiration de l'IKE et de l'IPSEC. Je crois que je confonds les deux donc je suis pas sûr. Mais je pense que c'est comme ça  :
+
+Lorsqu'on lance le ping pour la première fois nous avons les 3 messages du hauts en plus des informations sur les pings, c'est en fait le IKE en quick mode qui se déroule. Il revient quand celui-ci a expiré. 
+
+https://community.cisco.com/t5/security-documents/understanding-ios-ipsec-and-ike-debugs-ikev1-main-mode/ta-p/3112712
+
+![](./images/eeee.png)
+
+Et après un certain temps ou quantitié de ping on delete la SA pour en faire une nouvelle :
+
+![](./images/ffff.png)
+
+Ca c'est ce qui se passe quand une SA a été expiré et qu'il faut en faire une nouvelle, on est sur le protocole IPSec :
+
+![](./images/gggg.png)
+
+J'ai donc pas le moment ou le tunnel IKE expire.
 
 ---
 
