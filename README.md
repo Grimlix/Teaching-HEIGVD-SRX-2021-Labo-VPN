@@ -376,17 +376,14 @@ On constate en premier lieu l'échange en 3 messages (c'est le mode agressif) de
 
 ![](./images/dddd.png)
 
-TODO : Tout ce qui se passe dans ces screen (logs R1) je suis pas trop sûr. Surtout avec l'ordre dont se fait les choses et l'expiration de l'IKE et de l'IPSEC. Je crois que je confonds les deux donc je suis pas sûr. Mais je pense que c'est comme ça  :
+Lorsqu'on lance le ping la première fois, la phase 1 est réalisée puis ensuite vient la phase 2.
 
-Lorsqu'on lance le ping pour la première fois nous avons les 3 messages du hauts en plus des informations sur les pings, c'est en fait le IKE en quick mode qui se déroule. Il revient quand celui-ci a expiré. 
-
-https://community.cisco.com/t5/security-documents/understanding-ios-ipsec-and-ike-debugs-ikev1-main-mode/ta-p/3112712
-
-
-En activant les modes de debugs suivants sur R1, nous pouvons voir la phase 1 et 2 :
+En activant les modes de debugs suivants sur R1, nous pouvons voir ces deux phases :
 * debug crypto isakmp
 * debug crypto ipsec
 * debug crypto kmi
+
+https://community.cisco.com/t5/security-documents/understanding-ios-ipsec-and-ike-debugs-ikev1-main-mode/ta-p/3112712
 
 Nous avons la phase 1 en premier : Il va chercher parmi les policy de l'ip ayant envoyé le ping, celles ayants des attributs correspondant à la policy configurée dans R1 :
 
@@ -398,7 +395,7 @@ Puis plus bas on va trouver celle ayant la clé correspondante :
 
 ![](./images/_3.PNG)
 
-Puis nous avons la phase 2 : avec la création de 
+Puis nous avons la phase 2 : 
 
 ![](./images/_4.PNG)
 
