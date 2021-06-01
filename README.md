@@ -1,3 +1,7 @@
+Lucas Gianinetti & Nicolas Hungerbühler
+___
+
+
 Teaching-HEIGVD-SRX-2021-Labo-VPN
 
 **Ce travail de laboratoire est à faire en équipes de 2 personnes**
@@ -171,7 +175,7 @@ Pour déclencher et pratiquer les captures vous allez « pinger » votre routeur
 
 ![](./images/icmpreply.png)
 
-TODO : J'arrivais pas a faire fonctionner wireshark (j'ai mis le lien cf question 1), j'ai deja fait la config donc j'te laisse mettre l'image toi. 
+![](./images/shark1.PNG)
 
 ---
 
@@ -378,9 +382,29 @@ Lorsqu'on lance le ping pour la première fois nous avons les 3 messages du haut
 
 https://community.cisco.com/t5/security-documents/understanding-ios-ipsec-and-ike-debugs-ikev1-main-mode/ta-p/3112712
 
-![](./images/eeee.png)
 
-Et après un certain temps ou quantitié de ping on delete la SA pour en faire une nouvelle :
+En activant les modes de debugs suivants sur R1, nous pouvons voir la phase 1 et 2 :
+* debug crypto isakmp
+* debug crypto ipsec
+* debug crypto kmi
+
+Nous avons la phase 1 en premier : Il va chercher parmi les policy de l'ip ayant envoyé le ping, celles ayants des attributs correspondant à la policy configurée dans R1 :
+
+![](./images/_1.PNG)
+
+Puis plus bas on va trouver celle ayant la clé correspondante :
+
+![](./images/_2.PNG)
+
+![](./images/_3.PNG)
+
+Puis nous avons la phase 2 : avec la création de 
+
+![](./images/_4.PNG)
+
+![](./images/_5.PNG)
+
+Après un certain temps ou quantité de ping on delete la SA pour en faire une nouvelle :
 
 ![](./images/ffff.png)
 
@@ -388,7 +412,8 @@ Ca c'est ce qui se passe quand une SA a été expiré et qu'il faut en faire une
 
 ![](./images/gggg.png)
 
-J'ai donc pas le moment ou le tunnel IKE expire.
+
+
 
 ---
 
@@ -396,7 +421,7 @@ J'ai donc pas le moment ou le tunnel IKE expire.
 
 ---
 
-**Réponse :**  Les VPNs IPSec utilise les lifetimes pour contrôler quand un tunnel doit être rerétablit, dans un cas pour le tunnel isakmp (IKE) et pour l'autre le tunnel IPSec. De base la durée de vie de la phase 1 doit être plus grand que celui de la phase 2 ce qui n'est pas le cas ici (nous avons 1800s pour la phase 1 et 2560s pour la phase 2). Cela pourrait donner quelques problèmes car la phase 2 à besoin de la phase 1.
+**Réponse :**  Les VPNs IPSec utilisent les lifetimes pour contrôler quand un tunnel doit être rerétablit, dans un cas pour le tunnel isakmp (IKE) et pour l'autre le tunnel IPSec. La durée de vie de la phase 1 (1800s dans notre cas) doit être plus grand que celui de la phase 2 (300 sec dans notre cas) afin de ne pas redevoir négocier la phase 1 après chaque expiration de la phase 2. Cela pourrait donner quelques problèmes car la phase 2 à besoin de la phase 1.
 
 Ces deux lifetimes sont globaux. Un des deux peut déclencher le re rétablissement d'un tunnel.
 
@@ -406,7 +431,7 @@ Ces deux lifetimes sont globaux. Un des deux peut déclencher le re rétablissem
 
   
 
-* idle-time : permet aux SAs associées à des paires inactifs d'être supprimées avant que les lifetimes globaux soient expirés. S'il n'y a pas d'idle time configuré, ce sont les lifetimes globaux qui sont appliqués.
+* idle-time (900 sec dans notre cas) : permet aux SAs associées à des paires inactives d'être supprimées avant que les lifetimes globaux soient expirés. S'il n'y a pas d'idle time configuré, ce sont les lifetimes globaux qui sont appliqués.
 
 https://www.cisco.com/en/US/docs/ios-xml/ios/sec_conn_dplane/configuration/15-1s/sec-ipsec-idle-tmrs.html#:~:text=The%20IPsec%20SA%20idle%20timers,the%20global%20lifetime%20has%20expired.
 
