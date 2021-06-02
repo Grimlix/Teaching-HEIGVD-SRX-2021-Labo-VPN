@@ -504,6 +504,5 @@ L'algorithme utilisé est un HMAC avec l'algorithme sha-1 :
 
 ---
 
-**Réponse :**  Comme l'étape d'authentification.
-
+**Réponse :**  Les données, l'entête Ip originale et le ESH header sont portégés en intégrité. Un checksum est calculé puis hashé avec HMAC et envoyé avec le paquet afin que le récepteur puisse vérifier l'intégrité du paquet reçu.
 ---
